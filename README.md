@@ -1,6 +1,6 @@
 # Analytics FC
 
-Plataforma web de **Sports Analytics** que coleta estatísticas reais de equipes de futebol nas principais competições do mundo, calcula indicadores de desempenho dos últimos jogos e utiliza inteligência artificial (**Google Gemini**) para gerar análises táticas, probabilidades e projeções fundamentadas em dados.
+Plataforma web de **análise esportiva** que coleta estatísticas reais de equipes de futebol nas principais competições do mundo, calcula indicadores de desempenho dos últimos jogos e utiliza inteligência artificial (**Google Gemini**) para gerar análises táticas, probabilidades e projeções fundamentadas em dados.
 
 O projeto integra três camadas:
 - **API Pública de Futebol da ESPN**: fornece clubes, calendários de jogos, placares, eventos (gols por tempo e pênaltis) e estatísticas completas por partida na temporada atual — **sem necessidade de chave de API**;
@@ -11,7 +11,7 @@ O projeto integra três camadas:
 
 - **10 competições suportadas na temporada atual**: Brasileirão Série A, Libertadores, Sul-Americana, Champions League, Premier League, La Liga, Serie A (Itália), Bundesliga, Ligue 1 e Liga Portugal
 - **Tabela de classificação em tempo real**: consulta expansível da classificação atual de cada campeonato (pontos corridos ou fase de grupos), integrada também ao contexto da IA
-- **Métricas calculadas sobre os últimos 10 jogos**: aproveitamento (geral, casa e fora), médias de gols marcados/sofridos, Over 1.5 / Over 2.5, Ambas Marcam (BTTS), escanteios, finalizações (totais, no alvo e para fora), posse de bola, precisão de passes, faltas, impedimentos, cartões (amarelos e vermelhos), pênaltis convertidos e distribuição de gols no 1º e 2º tempo
+- **Métricas calculadas sobre os últimos 10 jogos**: aproveitamento (geral, casa e fora), médias de gols marcados/sofridos, Over 1.5 / Over 2.5, Ambas Marcam, escanteios, finalizações (totais, no alvo e para fora), posse de bola, precisão de passes, faltas, impedimentos, cartões (amarelos e vermelhos), pênaltis convertidos e distribuição de gols no 1º e 2º tempo
 - **Dois modos de análise**: análise individual de uma equipe ou comparação lado a lado para confronto entre dois times
 - **Análise preditiva com IA**: geração de relatório estruturado com probabilidades, pontos fortes/fracos e tendências estatísticas com nível de confiança
 - **Alta performance**: requisições de estatísticas por partida executadas em paralelo (`ThreadPoolExecutor`) combinadas com cache em memória (`Flask-Caching`) e cache local no navegador (`localStorage`)
