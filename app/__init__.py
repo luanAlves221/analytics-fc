@@ -21,6 +21,9 @@ def create_app():
     login_manager.init_app(app)
     cache.init_app(app)
 
+    with app.app_context():
+        db.create_all()
+
     @app.context_processor
     def injectar_ano_atual():
         return {"current_year": datetime.now().year}
