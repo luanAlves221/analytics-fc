@@ -1,23 +1,20 @@
 from flask import jsonify
+from concurrent.futures import ThreadPoolExecutor
 import requests
 import os
+from datetime import datetime
+from app import cache
 
-TEMPORADAS_CAMPEONATOS = {
-    "71": "2025",    # Brasileirão
-    "13": "2025",    # Libertadores
-    "11": "2025",    # Sul-Americana
-    "2": "2024",     # Champions League
-    "39": "2024",    # Premier League
-    "140": "2024",   # La Liga
-    "135": "2024",   # Serie A
-    "78": "2024",    # Bundesliga
-    "61": "2024",    # Ligue 1
-    "94": "2024"     # Liga Portugal
-}
+TEMPORADAS_CAMPEONATOS = {}
 
+def _obter_temporada(campeonato):
+    """Retorna a temporada corrente de uma liga, com fallback para o ano atual."""
+    return TEMPORADAS_CAMPEONATOS.get(campeonato) or str(datetime.now().year)
+
+@cache.cached(timeout=1800, key_prefix="buscar_times")
 def buscar_times(campeonato):
     """Busca os times de um determinado campeonato na API Football"""
-    temporada = TEMPORADAS_CAMPEONATOS.get(campeonato, "2025")
+    temporada = _obter_temporada(campeonato)
     
     url = "https://api-football-v1.p.rapidapi.com/v3/teams"
     params = {
@@ -58,9 +55,10 @@ def extrair_estatistica(estatisticas, tipo):
             return valor
     return 0
 
+@cache.cached(timeout=600, key_prefix="buscar_estatisticas_time")
 def buscar_estatisticas_time(time_id, campeonato_id):
     """Busca estatísticas detalhadas de um time em um campeonato"""
-    temporada = TEMPORADAS_CAMPEONATOS.get(campeonato_id, "2025")
+    temporada = _obter_temporada(campeonato_id)
     
     headers = {
         "X-RapidAPI-Key": os.getenv("API_FOOTBALL_KEY"),
@@ -96,45 +94,47 @@ def buscar_estatisticas_time(time_id, campeonato_id):
         "estatisticas_gerais": estatisticas_gerais
     }), 200
 
+def _formatar_jogo(jogo, time_id, headers):
+    """Formata um único jogo com estatísticas e eventos detalhados"""
+    fixture_id = jogo["fixture"]["id"]
+    data = jogo["fixture"]["date"]
+    time_casa_id = str(jogo["teams"]["home"]["id"])
+    time_fora_id = str(jogo["teams"]["away"]["id"])
+
+    jogo_em_casa = (time_casa_id == time_id)
+
+    adversario = jogo["teams"]["away"]["name"] if jogo_em_casa else jogo["teams"]["home"]["name"]
+    gols_pro = jogo["goals"]["home"] if jogo_em_casa else jogo["goals"]["away"]
+    gols_sofridos = jogo["goals"]["away"] if jogo_em_casa else jogo["goals"]["home"]
+
+    local = "Casa" if jogo_em_casa else "Fora"
+
+    estatisticas = buscar_estatisticas_partida(fixture_id, time_id, headers)
+
+    eventos = buscar_eventos_partida(fixture_id, time_id, headers)
+
+    estatisticas.update({
+        "penaltis_marcados": eventos["penaltis_marcados"],
+        "gols_primeiro_tempo": eventos["gols_primeiro_tempo"],
+        "gols_segundo_tempo": eventos["gols_segundo_tempo"]
+    })
+
+    return {
+        "data": data,
+        "adversario": adversario,
+        "local": local,
+        "gols_feitos": gols_pro,
+        "gols_sofridos": gols_sofridos,
+        "estatisticas_detalhadas": estatisticas
+    }
+
 def formatar_jogos(partidas, time_id, headers):
     """Formata os dados das partidas incluindo estatísticas detalhadas"""
-    jogos_formatados = []
-    
-    for jogo in partidas:
-        fixture_id = jogo["fixture"]["id"]
-        data = jogo["fixture"]["date"]
-        time_casa_id = str(jogo["teams"]["home"]["id"])
-        time_fora_id = str(jogo["teams"]["away"]["id"])
-        
-        jogo_em_casa = (time_casa_id == time_id)
-        
-        adversario = jogo["teams"]["away"]["name"] if jogo_em_casa else jogo["teams"]["home"]["name"]
-        gols_pro = jogo["goals"]["home"] if jogo_em_casa else jogo["goals"]["away"]
-        gols_sofridos = jogo["goals"]["away"] if jogo_em_casa else jogo["goals"]["home"]
-        
-        local = "Casa" if jogo_em_casa else "Fora"
-
-        estatisticas = buscar_estatisticas_partida(fixture_id, time_id, headers)
-        
-        eventos = buscar_eventos_partida(fixture_id, time_id, headers)
-        
-        estatisticas.update({
-            "penaltis_marcados": eventos["penaltis_marcados"],
-            "gols_primeiro_tempo": eventos["gols_primeiro_tempo"],
-            "gols_segundo_tempo": eventos["gols_segundo_tempo"]
-        })
-        
-        jogo_formatado = {
-            "data": data,
-            "adversario": adversario,
-            "local": local,
-            "gols_feitos": gols_pro,
-            "gols_sofridos": gols_sofridos,
-            "estatisticas_detalhadas": estatisticas
-        }
-        
-        jogos_formatados.append(jogo_formatado)
-    
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        jogos_formatados = list(executor.map(
+            lambda jogo: _formatar_jogo(jogo, time_id, headers),
+            partidas
+        ))
     return jogos_formatados
 
 def buscar_estatisticas_partida(fixture_id, time_id, headers):
@@ -303,6 +303,7 @@ def calcular_estatisticas_gerais(jogos_formatados):
     
     return estatisticas_gerais
 
+@cache.cached(timeout=600, key_prefix="buscar_campeonatos")
 def buscar_campeonatos():
     """Busca todos os campeonatos disponíveis na API Football"""
     url = "https://api-football-v1.p.rapidapi.com/v3/leagues"
@@ -326,6 +327,14 @@ def buscar_campeonatos():
     for item in dados.get("response", []):
         league = item.get("league", {})
         country = item.get("country", {})
+        
+        seasons = league.get("seasons", [])
+        temporada_atual = next(
+            (s.get("year") for s in seasons if s.get("current")),
+            None
+        )
+        if temporada_atual:
+            TEMPORADAS_CAMPEONATOS[str(league.get("id"))] = str(temporada_atual)
         
         campeonato = {
             "id": league.get("id"),

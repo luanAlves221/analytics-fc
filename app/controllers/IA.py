@@ -1,21 +1,18 @@
 import os
-import google.generativeai as genai
+from google import genai
 from flask import current_app
 
-def configurar_gemini():
-    """Configura e retorna o modelo Gemini"""
-    api_key = os.getenv("GEMINI_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_KEY não configurada no ambiente")
-    
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-pro')
+MODELO = "gemini-2.5-flash"
 
 def gerar_conteudo(prompt):
     """Função para gerar conteúdo usando o modelo Gemini"""
     try:
-        modelo = configurar_gemini()
-        resposta = modelo.generate_content(prompt)
+        api_key = os.getenv("GEMINI_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_KEY não configurada no ambiente")
+
+        client = genai.Client(api_key=api_key)
+        resposta = client.models.generate_content(model=MODELO, contents=prompt)
         return {
             "texto": resposta.text,
             "success": True
