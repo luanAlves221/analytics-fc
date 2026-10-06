@@ -25,6 +25,8 @@ def _obter_secret_key():
     return chave_gerada
 
 class Config:
+    """Configurações principais da aplicação Flask e conexão com o banco SQLite."""
+
     SECRET_KEY = _obter_secret_key()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///analytics.db")
