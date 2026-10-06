@@ -10,31 +10,36 @@
     <h1>Seja bem-vindo, {{ usuario.nome }}!</h1>
 
     <p class="mt-3">
-        Aqui você poderá fazer suas análises com nosso bot inteligente!
+        Consulte estatísticas detalhadas dos clubes e gere análises preditivas com IA no Analytics FC.
     </p>
 
     <div class="mt-5">
         <h2>Análise</h2>
 
         <form id="form-analise">
-            <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div class="mt-3">
                 <label for="campeonato">Campeonato:</label>
                 <select name="campeonato" id="campeonato" class="form-select mt-2">
                     <option value="">Nenhum</option>
-                    <option value="71">Brasileirão</option>
-                    <option value="13">Libertadores</option>
-                    <option value="11">Sul-Americana</option>
-                    <option value="2">Champions League</option>
-                    <option value="39">Premier League</option>
-                    <option value="140">La Liga</option>
-                    <option value="135">Serie A</option>
-                    <option value="78">Bundesliga</option>
-                    <option value="61">Ligue 1</option>
-                    <option value="94">Liga Portugal</option>
+                    <option value="bra.1">Brasileirão</option>
+                    <option value="conmebol.libertadores">Libertadores</option>
+                    <option value="conmebol.sudamericana">Sul-Americana</option>
+                    <option value="uefa.champions">Champions League</option>
+                    <option value="eng.1">Premier League</option>
+                    <option value="esp.1">La Liga</option>
+                    <option value="ita.1">Serie A</option>
+                    <option value="ger.1">Bundesliga</option>
+                    <option value="fra.1">Ligue 1</option>
+                    <option value="por.1">Liga Portugal</option>
                 </select>
+                <div id="tabela-container" class="mt-3" style="display: none;">
+                    <button type="button" id="btn-tabela" class="btn btn-outline-secondary btn-sm">
+                        Ver Tabela
+                    </button>
+                    <div id="resultado-tabela" class="mt-3 text-start" style="display: none;"></div>
+                </div>
             </div>
 
             <div class="mt-4">
@@ -60,18 +65,23 @@
             </div>
 
             <div class="mt-5">
-                <button type="button" id="btn-estatisticas" class="btn btn-secondary me-2">
+                <button type="button" id="btn-estatisticas" class="btn btn-secondary">
                     Ver Estatísticas
                 </button><br>
-                <div id="resultado-estatisticas" class="mt-5"></div>
-                <button type="submit" name="acao" value="analise_ia" class="btn btn-primary mt-3">
+                <div id="resultado-estatisticas" class="mt-4 text-start"></div>
+                <button type="submit" id="btn-analise-ia" name="acao" value="analise_ia" class="btn btn-primary mt-3">
                     Análise com IA
                 </button>
+                <div id="resultado-ia" class="mt-4 text-start"></div>
             </div>
         </form>
     </div>
 
-    <div class="mt-4">
+    <div class="alert alert-light border small text-muted mt-5" role="alert">
+        <strong>Aviso:</strong> O <strong>Analytics FC</strong> é apenas um projeto de portfólio. As análises têm caráter exclusivamente estatístico e informativo, sem qualquer vínculo com apostas ou recomendação financeira.
+    </div>
+
+    <div class="mt-3 mb-4">
         <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Sair</a>
     </div>
 
