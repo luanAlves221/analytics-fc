@@ -1,42 +1,46 @@
 from flask import current_app
 from .IA import gerar_conteudo
 
-def formatar_estatisticas_para_prompt(dados_time, nome_time):
-    """Formata as estatísticas de um time para incluir no prompt da IA"""
-    
-    estatisticas = dados_time["estatisticas_gerais"]
-    
-    prompt = f"• {nome_time}:\n"
-    prompt += f"  - Resultados: {estatisticas['vitorias']} vitórias, {estatisticas['empates']} empates, {estatisticas['derrotas']} derrotas\n"
-    prompt += f"  - Aproveitamento: {estatisticas['aproveitamento']}%\n"
-    prompt += f"  - Média de Gols Feitos: {estatisticas['media_gols_feitos']}\n"
-    prompt += f"  - Média de Gols Sofridos: {estatisticas['media_gols_sofridos']}\n"
-    prompt += f"  - Média Total de Gols: {estatisticas['media_gols_total']}\n"
-    prompt += f"  - Over 1.5: {estatisticas['porcentagem_over_1_5']}% ({estatisticas['jogos_over_1_5']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
-    prompt += f"  - Over 2.5: {estatisticas['porcentagem_over_2_5']}% ({estatisticas['jogos_over_2_5']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
-    prompt += f"  - Ambas marcam: {estatisticas['porcentagem_ambas_marcam']}% ({estatisticas['jogos_ambas_marcam']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
-    prompt += f"  - Média de Escanteios: {estatisticas['media_escanteios']}\n"
-    prompt += f"  - Média de Cartões Amarelos: {estatisticas['media_cartoes_amarelos']}\n"
-    prompt += f"  - Média de Cartões Vermelhos: {estatisticas['media_cartoes_vermelhos']}\n"
-    prompt += f"  - Média de Faltas: {estatisticas['media_faltas']}\n"
-    prompt += f"  - Posse de Bola Média: {estatisticas['media_posse']}%\n"
-    
-    jogos_ordenados = sorted(dados_time['ultimos_jogos'], key=lambda j: j['data'], reverse=True)
-    prompt += f"\n  - Últimos {len(jogos_ordenados)} jogos:\n"
-    
-    for jogo in jogos_ordenados:
-        data = jogo['data'].split('T')[0] if 'T' in jogo['data'] else jogo['data']
-        prompt += f"    * {data} - {jogo['local']} contra {jogo['adversario']}: {jogo['gols_feitos']} x {jogo['gols_sofridos']} ({jogo['resultado']})\n"
-    
-    return prompt
 
-def criar_prompt_confronto(dados_time_a, nome_time_a, dados_time_b, nome_time_b):
-    """Cria o prompt completo para análise de confronto"""
-    
-    estatisticas_a = formatar_estatisticas_para_prompt(dados_time_a, nome_time_a)
-    estatisticas_b = formatar_estatisticas_para_prompt(dados_time_b, nome_time_b)
-    
-    prompt = f"""
+class PromptBuilder:
+    """Responsável por montar os prompts enviados à IA."""
+
+    def _formatar_estatisticas_para_prompt(self, dados_time, nome_time):
+        """Formata as estatísticas de um time para incluir no prompt da IA"""
+
+        estatisticas = dados_time["estatisticas_gerais"]
+
+        prompt = f"• {nome_time}:\n"
+        prompt += f"  - Resultados: {estatisticas['vitorias']} vitórias, {estatisticas['empates']} empates, {estatisticas['derrotas']} derrotas\n"
+        prompt += f"  - Aproveitamento: {estatisticas['aproveitamento']}%\n"
+        prompt += f"  - Média de Gols Feitos: {estatisticas['media_gols_feitos']}\n"
+        prompt += f"  - Média de Gols Sofridos: {estatisticas['media_gols_sofridos']}\n"
+        prompt += f"  - Média Total de Gols: {estatisticas['media_gols_total']}\n"
+        prompt += f"  - Over 1.5: {estatisticas['porcentagem_over_1_5']}% ({estatisticas['jogos_over_1_5']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
+        prompt += f"  - Over 2.5: {estatisticas['porcentagem_over_2_5']}% ({estatisticas['jogos_over_2_5']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
+        prompt += f"  - Ambas marcam: {estatisticas['porcentagem_ambas_marcam']}% ({estatisticas['jogos_ambas_marcam']}/{len(dados_time['ultimos_jogos'])} jogos)\n"
+        prompt += f"  - Média de Escanteios: {estatisticas['media_escanteios']}\n"
+        prompt += f"  - Média de Cartões Amarelos: {estatisticas['media_cartoes_amarelos']}\n"
+        prompt += f"  - Média de Cartões Vermelhos: {estatisticas['media_cartoes_vermelhos']}\n"
+        prompt += f"  - Média de Faltas: {estatisticas['media_faltas']}\n"
+        prompt += f"  - Posse de Bola Média: {estatisticas['media_posse']}%\n"
+
+        jogos_ordenados = sorted(dados_time['ultimos_jogos'], key=lambda j: j['data'], reverse=True)
+        prompt += f"\n  - Últimos {len(jogos_ordenados)} jogos:\n"
+
+        for jogo in jogos_ordenados:
+            data = jogo['data'].split('T')[0] if 'T' in jogo['data'] else jogo['data']
+            prompt += f"    * {data} - {jogo['local']} contra {jogo['adversario']}: {jogo['gols_feitos']} x {jogo['gols_sofridos']} ({jogo['resultado']})\n"
+
+        return prompt
+
+    def criar_prompt_confronto(self, dados_time_a, nome_time_a, dados_time_b, nome_time_b):
+        """Cria o prompt completo para análise de confronto"""
+
+        estatisticas_a = self._formatar_estatisticas_para_prompt(dados_time_a, nome_time_a)
+        estatisticas_b = self._formatar_estatisticas_para_prompt(dados_time_b, nome_time_b)
+
+        prompt = f"""
 Você é um analista esportivo especializado em futebol e estatísticas para apostas esportivas.
 Baseando-se apenas nos dados estatísticos fornecidos, faça uma análise preditiva para um confronto direto entre {nome_time_a} e {nome_time_b}.
 Não mencione dados que não foram fornecidos e não faça suposições além do que as estatísticas indicam.
@@ -100,54 +104,15 @@ Liste suas recomendações de apostas para os seguintes mercados da Betano:
 
 Para cada sugestão, indique o nível de confiança (Alto, Médio, Baixo) com base na análise estatística.
 """
-    
-    return prompt
 
-def analisar_confronto(dados_time_a, nome_time_a, dados_time_b, nome_time_b, campeonato_id):
-    """Realiza a análise de confronto entre dois times"""
-    
-    try:
-        # Verificar se os dados necessários estão presentes
-        if not dados_time_a or not dados_time_b:
-            return {
-                "analise_formatada": "<p>Erro: Dados estatísticos insuficientes para análise.</p>",
-                "success": False,
-                "erro": "Dados estatísticos insuficientes"
-            }
-            
-        # Criar o prompt para a IA
-        prompt = criar_prompt_confronto(dados_time_a, nome_time_a, dados_time_b, nome_time_b)
-        
-        # Gerar a análise usando a IA
-        resultado = gerar_conteudo(prompt)
-        
-        if not resultado["success"]:
-            return {
-                "analise_formatada": resultado["texto"],
-                "success": False,
-                "erro": resultado.get("erro", "Erro desconhecido na geração de conteúdo")
-            }
-        
-        # Retornar o resultado formatado
-        return {
-            "analise_formatada": resultado["texto"],
-            "success": True
-        }
-    
-    except Exception as e:
-        current_app.logger.error(f"Erro ao analisar confronto: {str(e)}")
-        return {
-            "analise_formatada": f"<p>Erro ao processar análise: {str(e)}</p>",
-            "success": False,
-            "erro": str(e)
-        }
+        return prompt
 
-def criar_prompt_time_unico(dados_time, nome_time):
-    """Cria o prompt para análise individual de um time"""
+    def criar_prompt_time_unico(self, dados_time, nome_time):
+        """Cria o prompt para análise individual de um time"""
 
-    estatisticas = formatar_estatisticas_para_prompt(dados_time, nome_time)
+        estatisticas = self._formatar_estatisticas_para_prompt(dados_time, nome_time)
 
-    prompt = f"""
+        prompt = f"""
 Você é um analista esportivo especializado em futebol e estatísticas para apostas esportivas.
 Baseando-se apenas nos dados estatísticos fornecidos, faça uma análise preditiva do desempenho de {nome_time}.
 Não mencione dados que não foram fornecidos e não faça suposições além do que as estatísticas indicam.
@@ -210,39 +175,87 @@ Liste suas recomendações de apostas para os seguintes mercados da Betano:
 Para cada sugestão, indique o nível de confiança (Alto, Médio, Baixo) com base na análise estatística.
 """
 
-    return prompt
+        return prompt
 
-def analisar_time_unico(dados_time, nome_time):
-    """Realiza a análise individual de um único time"""
 
-    try:
-        if not dados_time:
-            return {
-                "analise_formatada": "<p>Erro: Dados estatísticos insuficientes para análise.</p>",
-                "success": False,
-                "erro": "Dados estatísticos insuficientes"
-            }
+class ServicoAnalise:
+    """Responsável por orquestrar a análise: monta o prompt e chama a IA."""
 
-        prompt = criar_prompt_time_unico(dados_time, nome_time)
+    def __init__(self):
+        self.prompt_builder = PromptBuilder()
 
-        resultado = gerar_conteudo(prompt)
+    def analisar_confronto(self, dados_time_a, nome_time_a, dados_time_b, nome_time_b):
+        """Realiza a análise de confronto entre dois times"""
 
-        if not resultado["success"]:
+        try:
+            if not dados_time_a or not dados_time_b:
+                return {
+                    "analise_formatada": "<p>Erro: Dados estatísticos insuficientes para análise.</p>",
+                    "success": False,
+                    "erro": "Dados estatísticos insuficientes"
+                }
+
+            prompt = self.prompt_builder.criar_prompt_confronto(
+                dados_time_a, nome_time_a,
+                dados_time_b, nome_time_b
+            )
+
+            resultado = gerar_conteudo(prompt)
+
+            if not resultado["success"]:
+                return {
+                    "analise_formatada": resultado["texto"],
+                    "success": False,
+                    "erro": resultado.get("erro", "Erro desconhecido na geração de conteúdo")
+                }
+
             return {
                 "analise_formatada": resultado["texto"],
-                "success": False,
-                "erro": resultado.get("erro", "Erro desconhecido na geração de conteúdo")
+                "success": True
             }
 
-        return {
-            "analise_formatada": resultado["texto"],
-            "success": True
-        }
+        except Exception as e:
+            current_app.logger.error(f"Erro ao analisar confronto: {str(e)}")
+            return {
+                "analise_formatada": f"<p>Erro ao processar análise: {str(e)}</p>",
+                "success": False,
+                "erro": str(e)
+            }
 
-    except Exception as e:
-        current_app.logger.error(f"Erro ao analisar time único: {str(e)}")
-        return {
-            "analise_formatada": f"<p>Erro ao processar análise: {str(e)}</p>",
-            "success": False,
-            "erro": str(e)
-        }
+    def analisar_time_unico(self, dados_time, nome_time):
+        """Realiza a análise individual de um único time"""
+
+        try:
+            if not dados_time:
+                return {
+                    "analise_formatada": "<p>Erro: Dados estatísticos insuficientes para análise.</p>",
+                    "success": False,
+                    "erro": "Dados estatísticos insuficientes"
+                }
+
+            prompt = self.prompt_builder.criar_prompt_time_unico(dados_time, nome_time)
+
+            resultado = gerar_conteudo(prompt)
+
+            if not resultado["success"]:
+                return {
+                    "analise_formatada": resultado["texto"],
+                    "success": False,
+                    "erro": resultado.get("erro", "Erro desconhecido na geração de conteúdo")
+                }
+
+            return {
+                "analise_formatada": resultado["texto"],
+                "success": True
+            }
+
+        except Exception as e:
+            current_app.logger.error(f"Erro ao analisar time único: {str(e)}")
+            return {
+                "analise_formatada": f"<p>Erro ao processar análise: {str(e)}</p>",
+                "success": False,
+                "erro": str(e)
+            }
+
+
+servico_analise = ServicoAnalise()
