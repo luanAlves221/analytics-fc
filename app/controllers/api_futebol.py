@@ -42,7 +42,7 @@ def buscar_times(campeonato):
         }
         for item in dados.get("response", [])
     ]
-    return jsonify(times)
+    return jsonify(times), 200
 
 def extrair_estatistica(estatisticas, tipo):
     """Extrai uma estatística específica da lista de estatísticas"""
@@ -94,7 +94,7 @@ def buscar_estatisticas_time(time_id, campeonato_id):
     return jsonify({
         "ultimos_jogos": jogos_formatados,
         "estatisticas_gerais": estatisticas_gerais
-    })
+    }), 200
 
 def formatar_jogos(partidas, time_id, headers):
     """Formata os dados das partidas incluindo estatísticas detalhadas"""
@@ -118,14 +118,19 @@ def formatar_jogos(partidas, time_id, headers):
         
         eventos = buscar_eventos_partida(fixture_id, time_id, headers)
         
+        estatisticas.update({
+            "penaltis_marcados": eventos["penaltis_marcados"],
+            "gols_primeiro_tempo": eventos["gols_primeiro_tempo"],
+            "gols_segundo_tempo": eventos["gols_segundo_tempo"]
+        })
+        
         jogo_formatado = {
             "data": data,
             "adversario": adversario,
             "local": local,
             "gols_feitos": gols_pro,
             "gols_sofridos": gols_sofridos,
-            "estatisticas_detalhadas": estatisticas,
-            "estatisticas": eventos["estatisticas"]
+            "estatisticas_detalhadas": estatisticas
         }
         
         jogos_formatados.append(jogo_formatado)
@@ -137,6 +142,10 @@ def buscar_estatisticas_partida(fixture_id, time_id, headers):
     stats_url = "https://api-football-v1.p.rapidapi.com/v3/fixtures/statistics"
     stats_params = {"fixture": fixture_id}
     stats_resp = requests.get(stats_url, headers=headers, params=stats_params)
+
+    if stats_resp.status_code != 200:
+        return {}
+
     stats_data = stats_resp.json().get("response", [])
 
     estatisticas_time = next(
@@ -165,22 +174,23 @@ def buscar_eventos_partida(fixture_id, time_id, headers):
     events_url = "https://api-football-v1.p.rapidapi.com/v3/fixtures/events"
     events_params = {"fixture": fixture_id}
     events_resp = requests.get(events_url, headers=headers, params=events_params)
+
+    if events_resp.status_code != 200:
+        return {
+            "penaltis_marcados": 0,
+            "gols_primeiro_tempo": 0,
+            "gols_segundo_tempo": 0
+        }
+
     events_data = events_resp.json().get("response", [])
     
     eventos_time = [evento for evento in events_data if str(evento.get("team", {}).get("id")) == time_id]
     
-    penaltis_marcados = sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("detail") == "Penalty")
-    gols_primeiro_tempo = sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("time", {}).get("elapsed", 0) <= 45)
-    gols_segundo_tempo = sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("time", {}).get("elapsed", 0) > 45)
-    
-    resultado = {
-        "penaltis_marcados": penaltis_marcados,
-        "gols_primeiro_tempo": gols_primeiro_tempo,
-        "gols_segundo_tempo": gols_segundo_tempo,
-        "estatisticas": events_data
+    return {
+        "penaltis_marcados": sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("detail") == "Penalty"),
+        "gols_primeiro_tempo": sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("time", {}).get("elapsed", 0) <= 45),
+        "gols_segundo_tempo": sum(1 for e in eventos_time if e.get("type") == "Goal" and e.get("time", {}).get("elapsed", 0) > 45)
     }
-    
-    return resultado
 
 def calcular_estatisticas_gerais(jogos_formatados):
     """Calcula estatísticas gerais com base nos jogos formatados"""
@@ -330,6 +340,9 @@ def buscar_campeonatos():
         if campeonato["name"]:
             campeonatos.append(campeonato)
     
-    campeonatos_ordenados = sorted(campeonatos, key=lambda x: (x["country"], x["name"]))
+    campeonatos_ordenados = sorted(
+        campeonatos,
+        key=lambda x: (x["country"] or "", x["name"] or "")
+    )
     
-    return jsonify(campeonatos_ordenados)
+    return jsonify(campeonatos_ordenados), 200

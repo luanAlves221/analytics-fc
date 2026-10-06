@@ -4,7 +4,7 @@ from ..controllers.api_futebol import (
     buscar_estatisticas_time,
     buscar_campeonatos
 )
-from ..controllers.analise import analisar_confronto
+from ..controllers.analise import analisar_confronto, analisar_time_unico
 
 futebol_bp = Blueprint("futebol", __name__)
 
@@ -48,58 +48,52 @@ def analise_ia():
         time_a_nome = dados.get('time_a_nome', 'Time A')
         time_b_id = dados.get('time_b_id')
         time_b_nome = dados.get('time_b_nome', 'Time B')
+        tipo_analise = dados.get('tipo_analise', 'confronto')
         
-        current_app.logger.info(f"Parâmetros extraídos: campeonato={campeonato_id}, time_a={time_a_id}, time_b={time_b_id}")
+        current_app.logger.info(f"Parâmetros extraídos: campeonato={campeonato_id}, time_a={time_a_id}, time_b={time_b_id}, tipo_analise={tipo_analise}")
         
-        if not campeonato_id or not time_a_id or not time_b_id:
+        if not campeonato_id or not time_a_id:
             missing = []
             if not campeonato_id: missing.append("campeonato")
             if not time_a_id: missing.append("time_a_id")
-            if not time_b_id: missing.append("time_b_id")
             
             error_msg = f"Parâmetros obrigatórios ausentes: {', '.join(missing)}"
             current_app.logger.error(error_msg)
             return jsonify({"erro": error_msg}), 400
         
-        current_app.logger.info(f"Analisando confronto: {time_a_nome} vs {time_b_nome}")
-        
         try:
-            dados_time_a_response = buscar_estatisticas_time(time_a_id, campeonato_id)
-            current_app.logger.info(f"Tipo de retorno de buscar_estatisticas_time para time A: {type(dados_time_a_response)}")
+            dados_time_a_response, status_a = buscar_estatisticas_time(time_a_id, campeonato_id)
             
-            if isinstance(dados_time_a_response, tuple):
-                current_app.logger.error(f"Erro ao buscar dados do time A: {dados_time_a_response}")
-                return dados_time_a_response
+            if status_a != 200:
+                current_app.logger.error(f"Erro ao buscar dados do time A: {status_a}")
+                return dados_time_a_response, status_a
             
-            if not isinstance(dados_time_a_response, dict):
-                dados_time_a = dados_time_a_response.get_json()
-                current_app.logger.info("Convertendo resposta do time A de objeto Response para dict")
-            else:
-                dados_time_a = dados_time_a_response
-                
+            dados_time_a = dados_time_a_response.get_json()
             current_app.logger.info(f"Dados do time A obtidos com sucesso. Chaves disponíveis: {dados_time_a.keys()}")
-        
-            dados_time_b_response = buscar_estatisticas_time(time_b_id, campeonato_id)
-            current_app.logger.info(f"Tipo de retorno de buscar_estatisticas_time para time B: {type(dados_time_b_response)}")
             
-            if isinstance(dados_time_b_response, tuple):
-                current_app.logger.error(f"Erro ao buscar dados do time B: {dados_time_b_response}")
-                return dados_time_b_response
-            
-            if not isinstance(dados_time_b_response, dict):
-                dados_time_b = dados_time_b_response.get_json()
-                current_app.logger.info("Convertendo resposta do time B de objeto Response para dict")
+            if tipo_analise == "time_unico":
+                current_app.logger.info("Iniciando análise de time único")
+                resultado_analise = analisar_time_unico(dados_time_a, time_a_nome)
             else:
-                dados_time_b = dados_time_b_response
+                if not time_b_id:
+                    current_app.logger.error("Parâmetro obrigatório ausente: time_b_id")
+                    return jsonify({"erro": "Parâmetros obrigatórios ausentes: time_b_id"}), 400
                 
-            current_app.logger.info(f"Dados do time B obtidos com sucesso. Chaves disponíveis: {dados_time_b.keys()}")
-            
-            current_app.logger.info("Iniciando análise de confronto")
-            resultado_analise = analisar_confronto(
-                dados_time_a, time_a_nome, 
-                dados_time_b, time_b_nome, 
-                campeonato_id
-            )
+                dados_time_b_response, status_b = buscar_estatisticas_time(time_b_id, campeonato_id)
+                
+                if status_b != 200:
+                    current_app.logger.error(f"Erro ao buscar dados do time B: {status_b}")
+                    return dados_time_b_response, status_b
+                
+                dados_time_b = dados_time_b_response.get_json()
+                current_app.logger.info(f"Dados do time B obtidos com sucesso. Chaves disponíveis: {dados_time_b.keys()}")
+                
+                current_app.logger.info(f"Analisando confronto: {time_a_nome} vs {time_b_nome}")
+                resultado_analise = analisar_confronto(
+                    dados_time_a, time_a_nome, 
+                    dados_time_b, time_b_nome, 
+                    campeonato_id
+                )
             
             current_app.logger.info(f"Análise concluída. Success: {resultado_analise.get('success', False)}")
             return jsonify(resultado_analise)

@@ -141,3 +141,108 @@ def analisar_confronto(dados_time_a, nome_time_a, dados_time_b, nome_time_b, cam
             "success": False,
             "erro": str(e)
         }
+
+def criar_prompt_time_unico(dados_time, nome_time):
+    """Cria o prompt para análise individual de um time"""
+
+    estatisticas = formatar_estatisticas_para_prompt(dados_time, nome_time)
+
+    prompt = f"""
+Você é um analista esportivo especializado em futebol e estatísticas para apostas esportivas.
+Baseando-se apenas nos dados estatísticos fornecidos, faça uma análise preditiva do desempenho de {nome_time}.
+Não mencione dados que não foram fornecidos e não faça suposições além do que as estatísticas indicam.
+
+Estatísticas do time:
+
+{estatisticas}
+
+Considerando apenas estas estatísticas, forneça:
+
+1. Análise do desempenho do time com base nas estatísticas recentes (aproveitamento, tendência de gols marcados e sofridos).
+
+2. Predição para total de gols com porcentagens:
+   - Over/Under 1.5 gols
+   - Over/Under 2.5 gols
+   - Over/Under 3.5 gols
+
+3. Probabilidade de ambas as equipes marcarem (Sim/Não)
+
+4. Probabilidade de escanteios:
+   - Over/Under 8.5 escanteios
+   - Over/Under 9.5 escanteios
+   - Over/Under 10.5 escanteios
+
+5. Probabilidade de cartões:
+   - Over/Under 3.5 cartões
+   - Over/Under 4.5 cartões
+   - Over/Under 5.5 cartões
+
+6. Análise das estatísticas individuais:
+   - Finalizações (total e no alvo)
+   - Posse de bola
+   - Faltas cometidas
+   - Qualquer outra estatística relevante dos dados fornecidos
+
+7. Análise dos pontos fortes e fracos do time com base nos dados
+
+Para cada predição, forneça um nível de confiança (Alto, Médio, Baixo) baseado na consistência das estatísticas.
+
+Formate sua resposta em HTML simples usando elementos <h4>, <p>, <ul>, <li>, <strong>.
+Não use cabeçalhos <h1>, <h2> ou <h3>.
+
+Ao final da análise, inclua:
+
+<h4>Resumo da Análise</h4>
+Neste resumo, liste de forma concisa todas as previsões feitas anteriormente, sem explicações detalhadas. Inclua:
+- Tendência do time (consistente, irregular, etc.)
+- Previsões específicas (ex: "{nome_time} deve marcar mais de 1.5 gols", "{nome_time} deve ter mais de 3.5 escanteios")
+- Todas as estatísticas relevantes (gols, escanteios, cartões, finalizações, etc.)
+
+<h4>Sugestões de Apostas</h4>
+Liste suas recomendações de apostas para os seguintes mercados da Betano:
+- Resultado da partida (1X2)
+- Mais/Menos Gols (Over/Under)
+- Ambas equipes marcam (Sim/Não)
+- Escanteios (Over/Under)
+- Cartões (Over/Under)
+- Estatísticas (finalizações, chutes a gol, faltas, etc.)
+
+Para cada sugestão, indique o nível de confiança (Alto, Médio, Baixo) com base na análise estatística.
+"""
+
+    return prompt
+
+def analisar_time_unico(dados_time, nome_time):
+    """Realiza a análise individual de um único time"""
+
+    try:
+        if not dados_time:
+            return {
+                "analise_formatada": "<p>Erro: Dados estatísticos insuficientes para análise.</p>",
+                "success": False,
+                "erro": "Dados estatísticos insuficientes"
+            }
+
+        prompt = criar_prompt_time_unico(dados_time, nome_time)
+
+        resultado = gerar_conteudo(prompt)
+
+        if not resultado["success"]:
+            return {
+                "analise_formatada": resultado["texto"],
+                "success": False,
+                "erro": resultado.get("erro", "Erro desconhecido na geração de conteúdo")
+            }
+
+        return {
+            "analise_formatada": resultado["texto"],
+            "success": True
+        }
+
+    except Exception as e:
+        current_app.logger.error(f"Erro ao analisar time único: {str(e)}")
+        return {
+            "analise_formatada": f"<p>Erro ao processar análise: {str(e)}</p>",
+            "success": False,
+            "erro": str(e)
+        }

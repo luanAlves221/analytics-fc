@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block title %}Página não encontrada{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="display-4">404</h1>
+    <p class="lead">Página não encontrada.</p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Voltar ao início</a>
+</div>
+{% endblock %}
