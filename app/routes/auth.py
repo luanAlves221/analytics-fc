@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required
+from urllib.parse import urlsplit
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.models.models import Usuario
@@ -52,7 +53,11 @@ def login():
 
         login_user(user)
         next_page = request.args.get("next")
-        return redirect(next_page or url_for("main.dashboard"))
+        if next_page:
+            parts = urlsplit(next_page)
+            if not parts.scheme and not parts.netloc and next_page.startswith("/"):
+                return redirect(next_page)
+        return redirect(url_for("main.dashboard"))
 
     return render_template("login.html", form=form)
 
