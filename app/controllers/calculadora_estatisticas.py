@@ -2,21 +2,25 @@ class CalculadoraEstatisticas:
     """Responsável por extrair e acumular estatísticas de partidas."""
 
     def extrair_estatistica(self, estatisticas, tipo):
-        """Extrai uma estatística específica da lista de estatísticas"""
+        """Extrai uma estatística específica da lista de estatísticas da partida."""
         for stat in estatisticas:
-            if stat["type"] == tipo:
-                valor = stat["value"]
-                if isinstance(valor, str) and "%" in valor:
-                    return float(valor.replace("%", ""))
-                elif isinstance(valor, (int, float)):
+            chave = stat.get("name") or stat.get("type")
+            if chave == tipo:
+                valor = stat.get("displayValue") if "displayValue" in stat else stat.get("value")
+                if valor is None:
+                    return 0
+                if isinstance(valor, (int, float)):
                     return valor
-                elif isinstance(valor, str) and valor.isdigit():
-                    return int(valor)
-                return valor
+                if isinstance(valor, str):
+                    texto = valor.replace("%", "").strip()
+                    try:
+                        return int(texto) if texto.isdigit() or (texto.startswith("-") and texto[1:].isdigit()) else float(texto)
+                    except ValueError:
+                        return 0
         return 0
 
     def calcular_estatisticas_gerais(self, jogos_formatados):
-        """Calcula estatísticas gerais com base nos jogos formatados"""
+        """Calcula as médias, totais e percentuais gerais a partir dos jogos formatados."""
         vitorias = 0
         empates = 0
         derrotas = 0
@@ -65,18 +69,18 @@ class CalculadoraEstatisticas:
             else:
                 jogos_fora += 1
 
-            est = jogo["estatisticas_detalhadas"]
-            total_escanteios += est["escanteios"] or 0
-            total_chutes += est["chutes_total"] or 0
-            total_chutes_alvo += est["chutes_no_alvo"] or 0
-            total_chutes_fora += est["chutes_fora"] or 0
-            total_posse += est["posse_bola"] or 0
-            total_cartoes_amarelos += est["cartoes_amarelos"] or 0
-            total_cartoes_vermelhos += est["cartoes_vermelhos"] or 0
-            total_faltas += est["faltas"] or 0
-            total_impedimentos += est["impedimentos"] or 0
-            total_passes += est["passes_total"] or 0
-            total_passes_certos += est["passes_certos"] or 0
+            est = jogo.get("estatisticas_detalhadas") or {}
+            total_escanteios += est.get("escanteios", 0) or 0
+            total_chutes += est.get("chutes_total", 0) or 0
+            total_chutes_alvo += est.get("chutes_no_alvo", 0) or 0
+            total_chutes_fora += est.get("chutes_fora", 0) or 0
+            total_posse += est.get("posse_bola", 0) or 0
+            total_cartoes_amarelos += est.get("cartoes_amarelos", 0) or 0
+            total_cartoes_vermelhos += est.get("cartoes_vermelhos", 0) or 0
+            total_faltas += est.get("faltas", 0) or 0
+            total_impedimentos += est.get("impedimentos", 0) or 0
+            total_passes += est.get("passes_total", 0) or 0
+            total_passes_certos += est.get("passes_certos", 0) or 0
 
             total_penaltis += est.get("penaltis_marcados", 0) or 0
             total_gols_1t += est.get("gols_primeiro_tempo", 0) or 0

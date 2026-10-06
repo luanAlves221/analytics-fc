@@ -1,15 +1,10 @@
-function escapeHtml(texto) {
-    const div = document.createElement("div");
-    div.textContent = texto == null ? "" : String(texto);
-    return div.innerHTML;
-}
-
 document.addEventListener("DOMContentLoaded", function() {
     const tipoAnaliseSelect = document.getElementById("tipo_analise");
     const timeASelect = document.getElementById("time_a");
     const timeBSelect = document.getElementById("time_b");
     const formAnalise = document.getElementById("form-analise");
-    const resultadoDiv = document.getElementById("resultado-estatisticas");
+    const btnAnaliseIA = document.getElementById("btn-analise-ia");
+    const resultadoDiv = document.getElementById("resultado-ia") || document.getElementById("resultado-estatisticas");
 
     function solicitarAnaliseIA() {
         const tipoAnalise = tipoAnaliseSelect.value;
@@ -31,6 +26,16 @@ document.addEventListener("DOMContentLoaded", function() {
         if (tipoAnalise === "confronto" && !timeIdB) {
             alert("Selecione o time B para análise de confronto.");
             return false;
+        }
+
+        if (tipoAnalise === "confronto" && timeIdA === timeIdB) {
+            alert("Selecione dois times diferentes para a análise de confronto.");
+            return false;
+        }
+
+        if (btnAnaliseIA) {
+            btnAnaliseIA.disabled = true;
+            btnAnaliseIA.textContent = "Analisando...";
         }
 
         resultadoDiv.innerHTML = "<div class='text-center'><p>Processando análise com IA, por favor aguarde...</p><div class='spinner-border' role='status'><span class='visually-hidden'>Carregando...</span></div></div>";
@@ -76,6 +81,12 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(erro => {
             console.error('Erro ao solicitar análise da IA:', erro);
             resultadoDiv.innerHTML = `<div class="alert alert-danger">Erro ao processar a análise com IA. Tente novamente mais tarde.</div>`;
+        })
+        .finally(() => {
+            if (btnAnaliseIA) {
+                btnAnaliseIA.disabled = false;
+                btnAnaliseIA.textContent = "Análise com IA";
+            }
         });
 
         return false;
@@ -85,8 +96,8 @@ document.addEventListener("DOMContentLoaded", function() {
         let html = `
             <div class="mt-4">
                 <h3 class="text-center mb-4">Análise de IA</h3>
-                <div class="card">
-                    <div class="card-body">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
                         ${data.analise_formatada}
                     </div>
                 </div>

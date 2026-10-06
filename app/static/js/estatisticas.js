@@ -1,9 +1,3 @@
-function escapeHtml(texto) {
-    const div = document.createElement("div");
-    div.textContent = texto == null ? "" : String(texto);
-    return div.innerHTML;
-}
-
 document.addEventListener("DOMContentLoaded", function() {
     const tipoAnaliseSelect = document.getElementById("tipo_analise");
     const timeASelect = document.getElementById("time_a");
@@ -41,7 +35,14 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        resultadoDiv.innerHTML = "<p>Carregando estatísticas...</p>";
+        if (tipoAnalise === "confronto" && timeIdA === timeIdB) {
+            resultadoDiv.innerHTML = "<p class='text-danger'>Selecione dois times diferentes para a análise de confronto.</p>";
+            return;
+        }
+
+        btnEstatisticas.disabled = true;
+        btnEstatisticas.textContent = "Carregando...";
+        resultadoDiv.innerHTML = "<p class='text-center'>Carregando estatísticas...</p>";
 
         if (tipoAnalise === "time_unico") {
             buscarEstatisticasTimeUnico(timeIdA);
@@ -72,6 +73,10 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(function(erro) {
                 console.error("Erro ao buscar estatísticas:", erro);
                 resultadoDiv.innerHTML = "<p class='text-danger'>Erro ao buscar estatísticas. Verifique o console para mais detalhes.</p>";
+            })
+            .finally(function() {
+                btnEstatisticas.disabled = false;
+                btnEstatisticas.textContent = "Ver Estatísticas";
             });
     }
 
@@ -105,6 +110,10 @@ document.addEventListener("DOMContentLoaded", function() {
         .catch(function(erro) {
             console.error("Erro ao buscar estatísticas de confronto:", erro);
             resultadoDiv.innerHTML = "<p class='text-danger'>Erro ao buscar estatísticas de confronto. Verifique o console para mais detalhes.</p>";
+        })
+        .finally(function() {
+            btnEstatisticas.disabled = false;
+            btnEstatisticas.textContent = "Ver Estatísticas";
         });
     }
 
@@ -169,6 +178,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         <p>Média de Gols Feitos: ${estat.media_gols_feitos}</p>
                         <p>Média de Gols Sofridos: ${estat.media_gols_sofridos}</p>
                         <p>Média Total de Gols: ${estat.media_gols_total}</p>
+                        <p>Gols por Tempo: 1ºT: ${estat.gols_primeiro_tempo} (${estat.porcentagem_gols_1t}%) | 2ºT: ${estat.gols_segundo_tempo} (${estat.porcentagem_gols_2t}%)</p>
+                        <p>Pênaltis Convertidos: ${estat.total_penaltis}</p>
                         <p>Over 1.5: ${estat.porcentagem_over_1_5}% (${estat.jogos_over_1_5}/${jogosOrdenados.length})</p>
                         <p>Over 2.5: ${estat.porcentagem_over_2_5}% (${estat.jogos_over_2_5}/${jogosOrdenados.length})</p>
                         <p>Ambas marcam: ${estat.porcentagem_ambas_marcam}% (${estat.jogos_ambas_marcam}/${jogosOrdenados.length})</p>
