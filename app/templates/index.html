@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1>Bot Futebol</h1>
+    <p class="mt-3">
+        O Bot Futebol é um bot que faz análise de jogos de futebol pelos campeonatos,
+        e também sugere com base nas estatísticas desses jogos qual seria uma boa
+        aposta para o confronto seguinte das equipes selecionadas. Crie sua conta e saiba mais.
+    </p>
+
+    <div class="mt-4">
+        <a href="{{ url_for('auth.register') }}">Criar Conta</a> |
+        <a href="{{ url_for('auth.login') }}">Já tem uma conta? Faça login</a>
+    </div>
+</div>
+{% endblock %}

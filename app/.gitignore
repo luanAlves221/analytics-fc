@@ -1,0 +1,8 @@
+# .gitignore
+
+.env
+*.http
+*.env.*
+.env.local
+.env.development
+.env.production

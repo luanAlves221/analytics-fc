@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+
+    <div class="mb-4">
+        <a href="{{ url_for('main.index') }}">Início</a>
+    </div>
+
+    <h1>Seja bem-vindo, {{ usuario.nome }}!</h1>
+
+    <p class="mt-3">
+        Aqui você poderá fazer suas análises com nosso bot inteligente!
+    </p>
+
+    <div class="mt-5">
+        <h2>Análise</h2>
+
+        <form id="form-analise">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mt-3">
+                <label for="campeonato">Campeonato:</label>
+                <select name="campeonato" id="campeonato" class="form-select mt-2">
+                    <option value="">Nenhum</option>
+                    <option value="71">Brasileirão</option>
+                    <option value="13">Libertadores</option>
+                    <option value="11">Sul-Americana</option>
+                    <option value="2">Champions League</option>
+                    <option value="39">Premier League</option>
+                    <option value="140">La Liga</option>
+                    <option value="135">Serie A</option>
+                    <option value="78">Bundesliga</option>
+                    <option value="61">Ligue 1</option>
+                    <option value="94">Liga Portugal</option>
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <label for="tipo_analise">Tipo de análise:</label>
+                <select name="tipo_analise" id="tipo_analise" class="form-select mt-2">
+                    <option value="time_unico">Apenas um time</option>
+                    <option value="confronto">Confronto entre dois times</option>
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <label for="time_a">Selecione o time A:</label>
+                <select name="time_a" id="time_a" class="form-select mt-2">
+                    <option value="">Carregando...</option>
+                </select>
+            </div>
+
+            <div class="mt-4" id="time_b_container" style="display: none;">
+                <label for="time_b">Selecione o time B:</label>
+                <select name="time_b" id="time_b" class="form-select mt-2">
+                    <option value="">Selecione o time B</option>
+                </select>
+            </div>
+
+            <div class="mt-5">
+                <button type="button" id="btn-estatisticas" class="btn btn-secondary me-2">
+                    Ver Estatísticas
+                </button><br>
+                <div id="resultado-estatisticas" class="mt-5"></div>
+                <button type="submit" name="acao" value="analise_ia" class="btn btn-primary mt-3">
+                    Análise com IA
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Sair</a>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+{% endblock %}

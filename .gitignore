@@ -1,0 +1,24 @@
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Banco SQLite
+*.db
+*.db-journal
+instance/secret_key
+
+# Logs
+*.log
+
+# Documentação interna (fica apenas local)
+context.md
+AGENTS.md
+specs/
